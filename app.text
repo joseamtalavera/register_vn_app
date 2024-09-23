@@ -1,0 +1,45 @@
+# flask_app.py
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
+# Simulate memory and CPU registers
+memory = {10: 5, 20: 3, 30: 0}
+cpu_registers = {
+    "PC": 0,  # Program Counter
+    "MAR": 0,  # Memory Address Register
+    "MDR": 0,  # Memory Data Register
+    "IR": "",  # Instruction Register
+    "AC": 0,  # Accumulator
+}
+
+instructions = ["LOAD 10", "ADD 20", "STORE 30"]
+
+@app.route('/run-cycle', methods=['POST'])
+def run_cycle():
+    if cpu_registers['PC'] >= len(instructions):
+        return jsonify({"message": "Program completed!"}), 200
+
+    # Fetch instruction
+    instruction = instructions[cpu_registers['PC']]
+    cpu_registers['IR'] = instruction
+    cpu_registers['PC'] += 1
+
+    # Decode instruction
+    operation, address = instruction.split()
+    cpu_registers['MAR'] = int(address)
+
+    # Execute instruction
+    if operation == "LOAD":
+        cpu_registers['MDR'] = memory[cpu_registers['MAR']]
+        cpu_registers['AC'] = cpu_registers['MDR']
+    elif operation == "ADD":
+        cpu_registers['MDR'] = memory[cpu_registers['MAR']]
+        cpu_registers['AC'] += cpu_registers['MDR']
+    elif operation == "STORE":
+        memory[cpu_registers['MAR']] = cpu_registers['AC']
+
+    return jsonify({"cpu_registers": cpu_registers, "memory": memory})
+
+if __name__ == '__main__':
+    app.run(debug=True)
